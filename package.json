@@ -1,0 +1,25 @@
+{
+  "name": "ltsicon-backend",
+  "version": "1.0.0",
+  "description": "Backend API for LTSICON Chennai 2026 — abstract submission & delegate registration (Node.js + MySQL + Brevo email).",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "init-db": "node src/db/initDb.js",
+    "smoke": "node scripts/smoke-test.js",
+    "db:check": "node scripts/db-check.js",
+    "mail:test": "node scripts/send-test-email.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "multer": "^2.0.1",
+    "mysql2": "^3.11.0"
+  }
+}

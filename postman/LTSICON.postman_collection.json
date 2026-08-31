@@ -1,0 +1,190 @@
+{
+  "info": {
+    "name": "LTSICON Chennai 2026 — Backend API",
+    "description": "Abstract submission + delegate registration endpoints.\n\nImport this, then run the requests top to bottom. The {{baseUrl}} variable defaults to http://localhost:4000 and {{reference}} is set automatically by the 'Register (step 1)' request so the confirm request can reuse it.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000", "type": "string" },
+    { "key": "reference", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "1. Health check",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Server is up', () => pm.response.to.have.status(200));",
+              "const b = pm.response.json();",
+              "pm.test('MySQL is connected', () => pm.expect(b.db).to.eql(true));",
+              "console.log('Email sending:', b.email);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "health"]
+        },
+        "description": "Expect: { \"ok\": true, \"db\": true, \"email\": \"disabled\" }\n\n- db:false  -> MySQL not connected. Check DB_USER/DB_PASSWORD/DB_NAME in .env (quote the password if it contains '#').\n- email:disabled -> BREVO_API_KEY is blank. Expected until the client sends the key; saves still work."
+      }
+    },
+    {
+      "name": "2. Submit abstract (JSON)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Created', () => pm.response.to.have.status(201));",
+              "const b = pm.response.json();",
+              "pm.test('ok', () => pm.expect(b.ok).to.eql(true));",
+              "console.log('Row id:', b.id, '| email:', b.emailStatus);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"Asha\",\n  \"lastName\": \"Rao\",\n  \"email\": \"asha.rao@example.org\",\n  \"mobile\": \"+91 99999 88888\",\n  \"institution\": \"Apollo Hospitals\",\n  \"coAuthors\": \"Dr B Kumar, Dr C Nair\",\n  \"membershipId\": \"LTSI-2291\",\n  \"presentationType\": \"Oral\",\n  \"track\": \"Hepatology\",\n  \"title\": \"Outcomes in living donor liver transplantation\",\n  \"abstractBody\": \"Background. Methods. Results. Conclusion.\",\n  \"keywords\": \"liver, transplant, outcomes\",\n  \"declarations\": [\n    \"Abstract is original, unpublished and not under review elsewhere.\",\n    \"All listed authors have approved the submission.\"\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/abstracts",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "abstracts"]
+        },
+        "description": "Expect 201: { ok, id, emailStatus, message }\n\nRequired: firstName, lastName, email, mobile, institution, presentationType, track, title.\nOmit any of them to see a 400 with the validation errors."
+      }
+    },
+    {
+      "name": "3. Submit abstract (with file upload)",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "firstName", "value": "Asha", "type": "text" },
+            { "key": "lastName", "value": "Rao", "type": "text" },
+            { "key": "email", "value": "asha.rao@example.org", "type": "text" },
+            { "key": "mobile", "value": "+91 99999 88888", "type": "text" },
+            { "key": "institution", "value": "Apollo Hospitals", "type": "text" },
+            { "key": "presentationType", "value": "E-Poster", "type": "text" },
+            { "key": "track", "value": "Transplant Oncology", "type": "text" },
+            { "key": "title", "value": "Abstract with attachment", "type": "text" },
+            { "key": "keywords", "value": "poster, oncology", "type": "text" },
+            { "key": "declarations", "value": "[\"Consent to publication in conference materials.\"]", "type": "text" },
+            { "key": "file", "type": "file", "src": [], "description": "Pick any PDF/DOCX. Only its metadata (name, size, type) is stored." }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/abstracts",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "abstracts"]
+        },
+        "description": "Same endpoint, multipart/form-data. Select a file for the 'file' key in the Body tab.\nFile metadata is saved to file_name / file_size / file_mime; the binary is not persisted. Max 15 MB."
+      }
+    },
+    {
+      "name": "4. Register — step 1 (lead capture)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Created', () => pm.response.to.have.status(201));",
+              "const b = pm.response.json();",
+              "pm.collectionVariables.set('reference', b.reference);",
+              "console.log('Saved reference for next request:', b.reference);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reference\": \"LTSI26-PM0001\",\n  \"name\": \"Dr Asha Rao\",\n  \"email\": \"asha.rao@example.org\",\n  \"phone\": \"+91 99999 88888\",\n  \"designation\": \"Consultant Surgeon\",\n  \"institution\": \"Apollo Hospitals\",\n  \"address\": \"Chennai\",\n  \"mciNumber\": \"TN12345\",\n  \"mciState\": \"Tamil Nadu Medical Council\",\n  \"phase\": \"early\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/registrations",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "registrations"]
+        },
+        "description": "What the frontend sends at step 1. Creates a 'pending' row and sends the 'Registration received' email.\n\nRe-sending the same reference updates the row instead of erroring, so it's safe to run twice.\nIf you omit 'reference', the server generates one and returns it."
+      }
+    },
+    {
+      "name": "5. Register — confirm payment",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('OK', () => pm.response.to.have.status(200));",
+              "const b = pm.response.json();",
+              "pm.test('marked paid', () => pm.expect(b.paymentStatus).to.eql('paid'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Dr Asha Rao\",\n  \"email\": \"asha.rao@example.org\",\n  \"phone\": \"+91 99999 88888\",\n  \"designation\": \"Consultant Surgeon\",\n  \"institution\": \"Apollo Hospitals\",\n  \"category\": \"LTSI Member\",\n  \"workshops\": [\"Robotic Surgery Workshop\", \"Hands-on Microsurgery\"],\n  \"guests\": [{ \"name\": \"Guest One\", \"mobile\": \"+91 90000 11111\" }],\n  \"currency\": \"INR\",\n  \"totalAmount\": 29000,\n  \"phase\": \"early\",\n  \"paid\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/registrations/{{reference}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "registrations", "{{reference}}"]
+        },
+        "description": "What the frontend sends when the delegate hits 'Pay'. Fills in category/workshops/guests/total,\nsets payment_status='paid' and sends the 'Registration confirmed' email.\n\n{{reference}} is auto-filled from request #4. Run #4 first, or paste a reference in manually."
+      }
+    },
+    {
+      "name": "6. Validation check (expect 400)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Rejected with 400', () => pm.response.to.have.status(400));",
+              "console.log('Errors:', pm.response.json().errors);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"\",\n  \"email\": \"not-an-email\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/abstracts",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "abstracts"]
+        },
+        "description": "Deliberately invalid. Proves validation works — expect 400 and a list of field errors."
+      }
+    }
+  ]
+}
