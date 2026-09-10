@@ -34,6 +34,32 @@ export const env = {
     adminEmail: process.env.ADMIN_EMAIL || process.env.MAIL_ADMIN_EMAIL || '',
     adminName: process.env.ADMIN_NAME || 'LTSICON Chennai 2026',
   },
+
+  razorpay: {
+    keyId: process.env.RAZORPAY_KEY_ID || '',
+    keySecret: process.env.RAZORPAY_KEY_SECRET || '',
+  },
+
+  auth: {
+    // Secret used to sign login tokens. Set a long random AUTH_SECRET in .env;
+    // if it changes, existing logins are invalidated (users just log in again).
+    secret: process.env.AUTH_SECRET || 'ltsicon-change-this-auth-secret',
+    // Base URL of the site, used to build the password-reset link in emails.
+    // Falls back to PUBLIC_BASE_URL, then to the request origin.
+    frontendUrl: (process.env.FRONTEND_URL || process.env.PUBLIC_BASE_URL || '').replace(/\/$/, ''),
+    tokenTtlDays: Number(process.env.AUTH_TOKEN_TTL_DAYS) || 30,
+  },
+
+  report: {
+    // Recipient for the periodic data export (abstracts + registrations).
+    email: process.env.REPORT_EMAIL || 'vishnu@jirehsol.com',
+    // True fixed cadence in hours (default 48h). The clock is persisted in the
+    // DB, so it survives restarts and isn't affected by month boundaries.
+    intervalHours: Number(process.env.REPORT_INTERVAL_HOURS) || 48,
+    // Set to false to disable the in-app scheduler (e.g. if using OS cron).
+    enabled: bool(process.env.REPORT_ENABLED, true),
+  },
 };
 
 export const mailEnabled = () => Boolean(env.mail.brevoApiKey);
+export const razorpayEnabled = () => Boolean(env.razorpay.keyId && env.razorpay.keySecret);

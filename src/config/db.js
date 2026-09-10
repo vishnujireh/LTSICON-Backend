@@ -59,8 +59,18 @@ export async function initDb() {
     }
   };
   await addColumn('ALTER TABLE abstracts ADD COLUMN file_path VARCHAR(255) NULL AFTER file_mime');
-  await addColumn('ALTER TABLE registrations ADD COLUMN transaction_id VARCHAR(120) NULL AFTER phase');
-  await addColumn('ALTER TABLE registrations ADD COLUMN payment_screenshot VARCHAR(255) NULL AFTER transaction_id');
+  await addColumn('ALTER TABLE registrations ADD COLUMN razorpay_order_id VARCHAR(120) NULL AFTER phase');
+  await addColumn('ALTER TABLE registrations ADD COLUMN razorpay_payment_id VARCHAR(120) NULL AFTER razorpay_order_id');
+  await addColumn('ALTER TABLE registrations ADD COLUMN order_no VARCHAR(40) NULL AFTER phase');
+  // Counters table for gap-free sequential order numbers (safe if it already exists).
+  await bootstrap.query(
+    `CREATE TABLE IF NOT EXISTS counters (
+       name  VARCHAR(50)  NOT NULL,
+       value INT UNSIGNED NOT NULL DEFAULT 0,
+       PRIMARY KEY (name)
+     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  );
+  await bootstrap.query("INSERT IGNORE INTO counters (name, value) VALUES ('registration_order', 0)");
 
   await bootstrap.end();
 }

@@ -47,14 +47,39 @@ CREATE TABLE IF NOT EXISTS registrations (
   currency          VARCHAR(8)    NULL,
   total_amount      DECIMAL(12,2) NULL,
   phase             VARCHAR(40)   NULL,
-  -- UPI payment proof captured on the final step.
-  transaction_id    VARCHAR(120)  NULL,
-  payment_screenshot VARCHAR(255) NULL,
+  -- Customer-facing sequential order number (e.g. LTSICON_0001), set on payment.
+  order_no          VARCHAR(40)   NULL,
+  -- Razorpay payment references.
+  razorpay_order_id   VARCHAR(120) NULL,
+  razorpay_payment_id VARCHAR(120) NULL,
   payment_status    ENUM('pending','paid','failed') NOT NULL DEFAULT 'pending',
   email_status      ENUM('sent','skipped','failed') NOT NULL DEFAULT 'skipped',
   created_at        TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uq_registrations_reference (reference),
+  UNIQUE KEY uq_registrations_order_no (order_no),
   KEY idx_registrations_email (email),
   KEY idx_registrations_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Atomic counters (used to hand out gap-free sequential order numbers).
+CREATE TABLE IF NOT EXISTS counters (
+  name  VARCHAR(50)  NOT NULL,
+  value INT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT IGNORE INTO counters (name, value) VALUES ('registration_order', 0);
+
+-- Real user accounts for the site login (separate from delegate registrations).
+CREATE TABLE IF NOT EXISTS users (
+  id                INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  name              VARCHAR(200)  NOT NULL,
+  email             VARCHAR(255)  NOT NULL,
+  password_hash     VARCHAR(255)  NOT NULL,
+  reset_token_hash  VARCHAR(128)  NULL,
+  reset_expires     DATETIME      NULL,
+  created_at        TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_users_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

@@ -9,7 +9,7 @@ const BREVO_ENDPOINT = 'https://api.brevo.com/v3/smtp/email';
  * When no BREVO_API_KEY is configured the call is a safe no-op ('skipped'),
  * so the rest of the flow (DB save) still succeeds during development.
  */
-async function sendEmail({ to, subject, htmlContent, replyTo, attachments }) {
+export async function sendEmail({ to, subject, htmlContent, replyTo, attachments }) {
   if (!mailEnabled()) {
     console.warn(`[email] BREVO_API_KEY not set — skipping "${subject}"`);
     return 'skipped';
@@ -89,6 +89,32 @@ function wrap(title, rowsHtml, note) {
     </table>
     ${note ? `<p style="font-size:12px;color:#6E5C54;margin-top:12px;">${note}</p>` : ''}
   </div>`;
+}
+
+/** Password-reset email with a one-time reset link. */
+export async function sendPasswordResetEmail(to, name, resetUrl) {
+  const html = `
+    <div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:auto;">
+      <div style="background:#6E1A2B;color:#FBF1DD;padding:18px 24px;border-radius:12px 12px 0 0;">
+        <h2 style="margin:0;font-size:18px;">LTSICON Chennai 2026</h2>
+        <p style="margin:4px 0 0;font-size:13px;opacity:.85;">Password reset</p>
+      </div>
+      <div style="border:1px solid #E7D9BB;border-top:none;padding:20px 24px;color:#33242A;">
+        <p>Hi ${esc(name || 'there')},</p>
+        <p>We received a request to reset your password. Click the button below to choose a new one. This link expires in 1 hour.</p>
+        <p style="text-align:center;margin:24px 0;">
+          <a href="${esc(resetUrl)}" style="background:#6E1A2B;color:#FBF1DD;text-decoration:none;padding:12px 22px;border-radius:999px;font-weight:600;display:inline-block;">Reset password</a>
+        </p>
+        <p style="font-size:12px;color:#6E5C54;">If the button doesn't work, copy this link into your browser:<br/>${esc(resetUrl)}</p>
+        <p style="font-size:12px;color:#6E5C54;">If you didn't request this, you can safely ignore this email.</p>
+      </div>
+    </div>`;
+
+  return sendEmail({
+    to: [{ email: to, name }],
+    subject: 'Reset your LTSICON password',
+    htmlContent: html,
+  });
 }
 
 // Brevo rejects very large payloads; only inline-attach files up to ~8 MB and
@@ -194,7 +220,8 @@ export async function sendRegistrationEmails(r, stage = 'started') {
       : '';
 
   const rows =
-    row('Reference', r.reference) +
+    // Unique sequential reference (e.g. LTSICON_0001); falls back to internal ref.
+    row('Reference', r.orderNo || r.reference) +
     row('Name', r.name) +
     row('Email', r.email) +
     row('Phone', r.phone) +
@@ -208,13 +235,8 @@ export async function sendRegistrationEmails(r, stage = 'started') {
     (grandTotal
       ? rowRaw('Grand Total', `<b style="font-size:15px;color:#6E1A2B;">${esc(grandTotal)}</b>`)
       : '') +
-    row('Transaction ID', r.transactionId) +
-    (r.screenshotUrl
-      ? rowRaw(
-          'Payment screenshot',
-          `<a href="${esc(r.screenshotUrl)}" style="color:#6E1A2B;font-weight:600;">View / download</a>`
-        )
-      : '');
+    // Payment ID shown; Razorpay Order ID is stored in the DB but hidden here.
+    row('Payment ID', r.paymentId);
 
   const recipients = [{ email: r.email, name: r.name }];
   if (env.mail.adminEmail) recipients.push({ email: env.mail.adminEmail });

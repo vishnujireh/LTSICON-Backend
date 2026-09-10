@@ -37,6 +37,24 @@ it logs a warning so you can configure `.env` and restart. Check readiness at
 | `BREVO_API_KEY` | **Paste the client's Brevo key here when provided.** Blank = emails skipped, saves still work |
 | `BREVO_SENDER_EMAIL` / `BREVO_SENDER_NAME` | Verified Brevo sender (used as the "From" on every email). `MAIL_FROM_EMAIL` / `MAIL_FROM_NAME` accepted as fallback names |
 | `ADMIN_EMAIL` | Organiser inbox that gets a copy of every submission (`MAIL_ADMIN_EMAIL` accepted as fallback) |
+| `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | Razorpay API keys. KEY_ID is public (sent to checkout); KEY_SECRET stays server-side and is used to create orders and verify signatures |
+
+## Payments (Razorpay)
+
+Registration Step 6 uses Razorpay Checkout with server-side verification:
+
+1. `POST /api/payments/order` — backend creates a Razorpay order for the amount
+   and returns `{ orderId, amount, currency, keyId }`.
+2. The browser opens Razorpay Checkout with those details; the delegate pays.
+3. Razorpay returns `razorpay_order_id`, `razorpay_payment_id`,
+   `razorpay_signature` to the browser, which sends them to
+   `PUT /api/registrations/:reference`.
+4. The backend **verifies the signature** (HMAC-SHA256 of `order_id|payment_id`
+   with the key secret) before marking the row `paid`, storing
+   `razorpay_order_id` / `razorpay_payment_id`, and emailing the confirmation.
+
+Online payment is charged in INR. Without `RAZORPAY_KEY_*` set, the order
+endpoint returns 500 and the payment step can't proceed.
 
 ## API
 

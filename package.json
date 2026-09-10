@@ -10,7 +10,9 @@
     "init-db": "node src/db/initDb.js",
     "smoke": "node scripts/smoke-test.js",
     "db:check": "node scripts/db-check.js",
-    "mail:test": "node scripts/send-test-email.js"
+    "mail:test": "node scripts/send-test-email.js",
+    "pay:test": "node scripts/razorpay-test.js",
+    "report": "node scripts/send-report.js"
   },
   "engines": {
     "node": ">=18"
@@ -20,6 +22,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "multer": "^2.0.1",
-    "mysql2": "^3.11.0"
+    "mysql2": "^3.11.0",
+    "node-cron": "^3.0.3"
   }
 }

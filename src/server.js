@@ -4,6 +4,7 @@ import { env, mailEnabled } from './config/env.js';
 import { initDb, pingDb } from './config/db.js';
 import apiRoutes from './routes/index.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
+import { startScheduledReports } from './services/scheduler.js';
 
 const app = express();
 // Behind a reverse proxy / CDN (e.g. Cloudflare) so req.protocol and req.host
@@ -54,6 +55,10 @@ async function start() {
   app.listen(env.port, () => {
     console.log(`🚀 LTSICON backend listening on http://localhost:${env.port}`);
   });
+
+  // Periodic data export (abstracts + registrations) to the report recipient.
+  // Never let scheduler setup affect the API — swallow any startup error.
+  startScheduledReports().catch((e) => console.error('🕒 Scheduler start failed:', e.message));
 }
 
 start();
