@@ -45,6 +45,10 @@ CREATE TABLE IF NOT EXISTS registrations (
   workshops         JSON          NULL,
   guests            JSON          NULL,
   currency          VARCHAR(8)    NULL,
+  -- Tax breakdown: subtotal (taxable value) + GST, total_amount is GST-inclusive.
+  subtotal          DECIMAL(12,2) NULL,
+  gst_rate          DECIMAL(5,2)  NULL,
+  gst_amount        DECIMAL(12,2) NULL,
   total_amount      DECIMAL(12,2) NULL,
   phase             VARCHAR(40)   NULL,
   -- Customer-facing sequential order number (e.g. LTSICON_0001), set on payment.

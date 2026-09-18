@@ -12,7 +12,8 @@
     "db:check": "node scripts/db-check.js",
     "mail:test": "node scripts/send-test-email.js",
     "pay:test": "node scripts/razorpay-test.js",
-    "report": "node scripts/send-report.js"
+    "report": "node scripts/send-report.js",
+    "seed-users": "node scripts/seed-users-from-registrations.js"
   },
   "engines": {
     "node": ">=18"

@@ -62,6 +62,9 @@ export async function initDb() {
   await addColumn('ALTER TABLE registrations ADD COLUMN razorpay_order_id VARCHAR(120) NULL AFTER phase');
   await addColumn('ALTER TABLE registrations ADD COLUMN razorpay_payment_id VARCHAR(120) NULL AFTER razorpay_order_id');
   await addColumn('ALTER TABLE registrations ADD COLUMN order_no VARCHAR(40) NULL AFTER phase');
+  await addColumn('ALTER TABLE registrations ADD COLUMN subtotal DECIMAL(12,2) NULL AFTER currency');
+  await addColumn('ALTER TABLE registrations ADD COLUMN gst_rate DECIMAL(5,2) NULL AFTER subtotal');
+  await addColumn('ALTER TABLE registrations ADD COLUMN gst_amount DECIMAL(12,2) NULL AFTER gst_rate');
   // Counters table for gap-free sequential order numbers (safe if it already exists).
   await bootstrap.query(
     `CREATE TABLE IF NOT EXISTS counters (

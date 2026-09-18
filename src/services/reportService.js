@@ -50,7 +50,10 @@ const REGISTRATION_COLUMNS = [
   { key: 'workshops', label: 'Workshops' },
   { key: 'guests', label: 'Accompanying' },
   { key: 'currency', label: 'Currency' },
-  { key: 'total_amount', label: 'Total' },
+  { key: 'subtotal', label: 'Subtotal' },
+  { key: 'gst_rate', label: 'GST %' },
+  { key: 'gst_amount', label: 'GST Amount' },
+  { key: 'total_amount', label: 'Total (incl. GST)' },
   { key: 'phase', label: 'Phase' },
   { key: 'payment_status', label: 'Payment Status' },
   { key: 'razorpay_payment_id', label: 'Razorpay Payment ID' },
@@ -69,7 +72,8 @@ async function fetchRows() {
   );
   const [registrations] = await pool.query(
     `SELECT id, created_at, reference, name, email, phone, designation, institution,
-            category, workshops, guests, currency, total_amount, phase,
+            category, workshops, guests, currency, subtotal, gst_rate, gst_amount,
+            total_amount, phase,
             payment_status, razorpay_payment_id, razorpay_order_id, email_status
      FROM registrations ORDER BY id`
   );

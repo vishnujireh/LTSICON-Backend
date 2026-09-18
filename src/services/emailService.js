@@ -232,6 +232,9 @@ export async function sendRegistrationEmails(r, stage = 'started') {
     rowRaw('Workshops', workshopsCell) +
     rowRaw('Accompanying', guestsCell) +
     row('Phase', r.phase) +
+    // Subtotal + GST breakdown (present on GST-enabled submissions).
+    (b && b.subtotal != null ? row('Subtotal', money(b.currency, b.subtotal)) : '') +
+    (b && b.gstAmount != null ? row(`GST (${b.gstRate || 18}%)`, money(b.currency, b.gstAmount)) : '') +
     (grandTotal
       ? rowRaw('Grand Total', `<b style="font-size:15px;color:#6E1A2B;">${esc(grandTotal)}</b>`)
       : '') +

@@ -113,6 +113,12 @@ export async function confirmRegistration(req, res, next) {
     // Reuse the number if already assigned; otherwise take the next one.
     const orderNo = existingRow?.order_no || (await nextOrderNo());
 
+    // Tax breakdown from the client's breakdown object (stored for GST accounting).
+    const bd = body.breakdown || {};
+    const subtotal = bd.subtotal != null ? Number(bd.subtotal) : null;
+    const gstRate = bd.gstRate != null ? Number(bd.gstRate) : null;
+    const gstAmount = bd.gstAmount != null ? Number(bd.gstAmount) : null;
+
     // Pass the breakdown + reference (LTSICON_####) + Razorpay ids to the email.
     const emailStatus = await sendRegistrationEmails(
       { ...data, breakdown: body.breakdown, orderNo, paymentId, orderId },
@@ -125,7 +131,7 @@ export async function confirmRegistration(req, res, next) {
         `UPDATE registrations SET
            reference=?, name=?, email=?, phone=?, designation=?, institution=?, address=?,
            mci_number=?, mci_state=?, category=?, workshops=?, guests=?,
-           currency=?, total_amount=?, phase=?, order_no=?,
+           currency=?, subtotal=?, gst_rate=?, gst_amount=?, total_amount=?, phase=?, order_no=?,
            razorpay_order_id=?, razorpay_payment_id=?, payment_status=?, email_status=?
          WHERE id=?`,
         [
@@ -142,6 +148,9 @@ export async function confirmRegistration(req, res, next) {
           JSON.stringify(data.workshops || []),
           JSON.stringify(data.guests || []),
           data.currency || null,
+          subtotal,
+          gstRate,
+          gstAmount,
           data.totalAmount,
           data.phase || null,
           orderNo,
@@ -158,14 +167,15 @@ export async function confirmRegistration(req, res, next) {
         `INSERT INTO registrations
           (reference, name, email, phone, designation, institution, address,
            mci_number, mci_state, category, workshops, guests, currency,
-           total_amount, phase, order_no, razorpay_order_id, razorpay_payment_id,
-           payment_status, email_status)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+           subtotal, gst_rate, gst_amount, total_amount, phase, order_no,
+           razorpay_order_id, razorpay_payment_id, payment_status, email_status)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         [
           orderNo, data.name, data.email, data.phone || null, data.designation || null,
           data.institution || null, data.address || null, data.mciNumber || null,
           data.mciState || null, data.category || null, JSON.stringify(data.workshops || []),
-          JSON.stringify(data.guests || []), data.currency || null, data.totalAmount,
+          JSON.stringify(data.guests || []), data.currency || null,
+          subtotal, gstRate, gstAmount, data.totalAmount,
           data.phase || null, orderNo, orderId, paymentId, 'paid', emailStatus,
         ]
       );
